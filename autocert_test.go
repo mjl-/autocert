@@ -172,6 +172,12 @@ func testManager(t *testing.T) *Manager {
 }
 
 func TestGetCertificate(t *testing.T) {
+	// For testing Manager.GetPrivateKey.
+	ecdsaKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("generating ecdsa key: %v", err)
+	}
+
 	tests := []struct {
 		name        string
 		hello       *tls.ClientHelloInfo
@@ -406,6 +412,33 @@ func TestGetCertificate(t *testing.T) {
 					Key: make([]byte, 32),
 				}
 			},
+		},
+		{
+			name:   "getPrivateKey",
+			hello:  clientHelloInfo("example.org", algECDSA),
+			domain: "example.org",
+			prepare: func(t *testing.T, man *Manager, s *acmetest.CAServer) {
+				man.GetPrivateKey = func(host string, kt KeyType) (crypto.Signer, error) {
+					return ecdsaKey, nil
+				}
+			},
+			verify: func(t *testing.T, man *Manager, leaf *x509.Certificate) {
+				if pubKey, ok := leaf.PublicKey.(*ecdsa.PublicKey); !ok || !pubKey.Equal(ecdsaKey.Public()) {
+					t.Error("got public key that doesn't belong to provided private key")
+				}
+			},
+		},
+		{
+			name:   "getPrivateKeyBadKey",
+			hello:  clientHelloInfo("example.org", algRSA),
+			domain: "example.org",
+			prepare: func(t *testing.T, man *Manager, s *acmetest.CAServer) {
+				man.GetPrivateKey = func(host string, kt KeyType) (crypto.Signer, error) {
+					// Should be RSA.
+					return ecdsaKey, nil
+				}
+			},
+			expectError: "got *ecdsa.PrivateKey, expected *rsa.PrivateKey",
 		},
 	}
 	for _, tt := range tests {
