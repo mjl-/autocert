@@ -1,6 +1,6 @@
 module github.com/mjl-/autocert
 
-go 1.21.1
+go 1.20
 
 require (
 	golang.org/x/crypto v0.13.0
