@@ -157,9 +157,9 @@ type Manager struct {
 	// Mutating the field after the first call of GetCertificate method will have no effect.
 	Client *acme.Client
 
-	// GetPrivateKey is called to get a private key for a host when there is no valid
-	// certificate in the cache. If GetKey is nil, a new key is automatically
-	// generated.
+	// GetPrivateKey is called to get a private key for a host (A-labels only, no
+	// trailing dot) when there is no valid certificate in the cache. If GetPrivateKey
+	// is nil, a new key is automatically generated.
 	GetPrivateKey func(host string, keyType KeyType) (crypto.Signer, error)
 
 	// Email optionally specifies a contact email address.
